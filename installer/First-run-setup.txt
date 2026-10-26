@@ -1,0 +1,75 @@
+================================================================
+ Akashvani Workflow — Getting Started
+================================================================
+
+You're done installing — the app is fully configured and ready
+to use. Nothing to edit.
+
+----------------------------------------------------------------
+ LAUNCH
+----------------------------------------------------------------
+
+  Start menu  →  Akashvani Workflow
+
+  Your default browser opens to http://localhost:3001 and the
+  pipeline UI loads. You're in.
+
+
+----------------------------------------------------------------
+ FIRST GOOGLE DRIVE UPLOAD
+----------------------------------------------------------------
+
+  The first time the pipeline reaches the Google Drive upload
+  step, a banner appears with an "Authorize Google Drive" link.
+
+    1. Click the link — a Google sign-in tab opens.
+    2. Pick the Google account that owns the Drive folder you
+       want to upload to (this is YOUR account, not a developer
+       account).
+    3. Accept the permission to "See and upload files" — this
+       is the standard Google Drive permission.
+    4. The tab redirects back to Akashvani and the pipeline
+       resumes from where it paused.
+
+  You only do this once. Akashvani remembers the sign-in for the
+  rest of the session and refreshes the token automatically.
+
+
+----------------------------------------------------------------
+ WHERE YOUR WORK GOES
+----------------------------------------------------------------
+
+  Every pipeline run creates a session folder under your Documents:
+
+       Documents\Akashvani Workflow\workflows\<session-id>\
+                        akashwani-structure\
+                          ├─ raw footage\      (copies of your originals)
+                          ├─ source file\      (compressed + watermarked videos)
+                          ├─ AI Subtitles\     (SRT and Word transcript)
+                          └─ Editor\           (Premiere Pro project files)
+
+  Open File Explorer  →  click "Documents" in the sidebar  →
+  open the "Akashvani Workflow" folder to find everything from
+  your runs.
+
+  Uninstalling Akashvani does NOT touch this folder, so your work
+  is always safe — even across upgrades.
+
+
+----------------------------------------------------------------
+ ADVANCED — config.env
+----------------------------------------------------------------
+
+  The file 'config.env' in this install folder controls the app.
+  You normally never need to edit it. Override defaults here if
+  you want to:
+
+    - Change the local port (PORT=3001 by default)
+    - Use your own Google Cloud OAuth project
+    - Swap the watermark image (WATERMARK_FILE_PATH)
+    - Enable 2-pass encoding (ENCODE_MODE=2pass)
+
+  After editing, fully close the app and relaunch from the Start
+  menu so the changes take effect.
+
+================================================================

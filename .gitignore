@@ -9,7 +9,10 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-server
+dist-installer
 dist-ssr
+.cache
 *.local
 
 # Editor directories and files
@@ -22,3 +25,50 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets — API keys and OAuth client secrets. There was no rule for these, so
+# a plain `git add -A` would have committed server/.env and the Sarvam key.
+.env
+.env.*
+**/.env
+# ...but the installer's documented template is meant to be tracked.
+!installer/config.env.template
+
+# Transcription working files
+# Segment WAVs are scratch, and the prototype folder holds whole episodes.
+*.srt.segments/
+_srt_segments/
+__pycache__/
+test-sarvam-models/*.mp4
+test-sarvam-models/*.wav
+
+# ── Episode media and per-run working data ───────────────────────────────────
+# Gigabytes of real programme video. GitHub rejects any single file over
+# 100 MB, so without these rules the push is refused outright.
+server/uploads/
+server/workflows/
+server/system-intake/
+akashwani-test-v1/
+
+# App settings written at runtime on each machine, not shared config.
+server/drive-target.json
+server/dictionaries.json
+server/user-data-path.txt
+.romanize-cache/
+*.srt.segments/
+
+# ── Research outputs ─────────────────────────────────────────────────────────
+# The prototype SCRIPTS are kept — they document how the ported logic works.
+# Their outputs are a real PlanetRead episode's subtitles, which is programme
+# content rather than code.
+test-sarvam-models/*.srt
+test-sarvam-models/*.json
+test-sarvam-models/*.txt
+
+# ── Claude Code local state ──────────────────────────────────────────────────
+.claude/worktrees/
+.claude/settings.local.json
+
+# stray local tool config and editor backups
+**/.claude/settings.json
+*.bak

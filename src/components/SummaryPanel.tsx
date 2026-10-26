@@ -16,7 +16,10 @@ export function SummaryPanel({ steps, totalElapsedMs, onReset }: SummaryPanelPro
             <CheckCircle2 className="h-8 w-8 text-success" />
           </div>
           <h2 className="text-2xl font-semibold text-foreground">Pipeline Complete</h2>
-          <div className="flex items-center justify-center gap-2 mt-2 text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+            Summary reflects the simulated run in this UI prototype — timings and statuses are for demonstration only.
+          </p>
+          <div className="flex items-center justify-center gap-2 mt-3 text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span className="font-mono text-lg">{formatTime(totalElapsedMs)}</span>
           </div>
