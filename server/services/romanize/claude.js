@@ -29,6 +29,7 @@ import {
   MAX_ATTEMPTS, MODEL, RETRYABLE_STATUS,
 } from './config.js';
 import { logInfo, logWarn, logError } from '../logger.js';
+import { CONFIG_FILE_HINT } from '../../paths.js';
 
 const NATIVE_SCRIPT_RE = new RegExp(`[${INDIC_CHARS}]`);
 const NUMBERED_RE = /^\s*(\d+)\t(.*)$/;            // strict: "12\t<text>"
@@ -78,7 +79,7 @@ export class Romanizer {
     if (!key) {
       const err = new Error(
         'No Anthropic API key on this machine, so subtitles cannot be romanized. ' +
-        'Add ANTHROPIC_API_KEY to config.env next to Akashvani.exe.'
+        `Add ANTHROPIC_API_KEY to ${CONFIG_FILE_HINT}.`
       );
       err.notConfigured = true;
       throw err;

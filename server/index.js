@@ -18,9 +18,11 @@ import {
   WORKFLOWS_DIR,
   SYSTEM_INTAKE_DIR,
   CONFIG_ENV_PATH,
+  CONFIG_IN_SUPPORT_DIR,
   FRONTEND_DIR,
   describePaths,
 } from './paths.js';
+import { seedConfig } from './configSeed.js';
 import {
   logStartup, logInfo, logWarn, logError, installCrashHandlers, LOG_DIR,
 } from './services/logger.js';
@@ -30,6 +32,19 @@ import {
 installCrashHandlers();
 
 // ── 1. Load .env (from config.env next to .exe in prod, server/.env in dev) ──
+// On macOS the file is in the user's Application Support folder and is created
+// here from the copies shipped inside the app.
+if (CONFIG_IN_SUPPORT_DIR) {
+  try {
+    seedConfig({
+      configPath: CONFIG_ENV_PATH,
+      templatePath: join(APP_ROOT, 'config.env.template'),
+      defaultsPath: join(APP_ROOT, 'config.defaults.env'),
+    });
+  } catch (err) {
+    logWarn(`Could not prepare ${CONFIG_ENV_PATH}: ${err.message}`);
+  }
+}
 loadEnv({ path: CONFIG_ENV_PATH });
 // In dev we also let a project-root .env override (e.g. ENCODE_MODE=2pass)
 if (!IS_PACKAGED) loadEnv();

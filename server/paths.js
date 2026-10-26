@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import os from 'os';
+import { supportDir, logDir } from './appDirs.js';
 
 /** True when running inside a pkg-bundled binary. */
 export const IS_PACKAGED = !!process.pkg;
@@ -40,16 +41,19 @@ export const APP_ROOT = IS_PACKAGED
  */
 
 /**
+ * Per-user folder that is always writable, even when the app itself sits
+ * somewhere read-only: %LOCALAPPDATA%\Akashvani Workflow on Windows,
+ * ~/Library/Application Support/Akashvani Workflow on macOS.
+ */
+export const SUPPORT_DIR = supportDir(process.platform, process.env, os.homedir());
+
+/**
  * Path to the preference file that stores the user-chosen data directory.
- * Stored in %LOCALAPPDATA%\Akashvani Workflow\ — always writable by the
- * current user even when the exe lives in C:\Program Files\.
+ * Stored in SUPPORT_DIR — always writable by the current user even when the
+ * exe lives in C:\Program Files\.
  */
 export const DATA_DIR_PREF_FILE = IS_PACKAGED
-  ? join(
-      process.env.LOCALAPPDATA || join(os.homedir(), 'AppData', 'Local'),
-      'Akashvani Workflow',
-      'user-data-path.txt'
-    )
+  ? join(SUPPORT_DIR, 'user-data-path.txt')
   : null;
 
 function resolveUserDataDir() {
@@ -60,11 +64,9 @@ function resolveUserDataDir() {
     if (saved) return saved;
   }
   // Default fallback: Documents\Akashvani Workflow
-  const home = os.homedir();
-  const docs = join(home, 'Documents');
+  const docs = join(os.homedir(), 'Documents');
   if (existsSync(docs)) return join(docs, 'Akashvani Workflow');
-  const localAppData = process.env.LOCALAPPDATA || join(home, 'AppData', 'Local');
-  return join(localAppData, 'Akashvani Workflow');
+  return SUPPORT_DIR;
 }
 
 export const USER_DATA_DIR = resolveUserDataDir();
@@ -127,11 +129,23 @@ export const SYSTEM_INTAKE_DIR = join(USER_DATA_DIR, 'system-intake');
  *   PACKAGED — config.env sits NEXT TO Akashvani.exe so users can edit it
  *              without Admin rights only if installed under their profile,
  *              but the .env file itself is owned by Akashvani.exe's folder.
+ *   PACKAGED, macOS — config.env lives in SUPPORT_DIR. The .app is sealed by
+ *              code signing, so nothing may be written inside it. configSeed.js
+ *              creates the file on launch.
  *   DEV      — server/.env (existing behavior).
  */
-export const CONFIG_ENV_PATH = IS_PACKAGED
-  ? join(APP_ROOT, 'config.env')
-  : join(APP_ROOT, '.env');
+export const CONFIG_IN_SUPPORT_DIR = IS_PACKAGED && process.platform === 'darwin';
+
+export const CONFIG_ENV_PATH = CONFIG_IN_SUPPORT_DIR
+  ? join(SUPPORT_DIR, 'config.env')
+  : IS_PACKAGED
+    ? join(APP_ROOT, 'config.env')
+    : join(APP_ROOT, '.env');
+
+/** How error messages tell people where config.env is. */
+export const CONFIG_FILE_HINT = CONFIG_IN_SUPPORT_DIR
+  ? 'config.env in ~/Library/Application Support/Akashvani Workflow'
+  : 'config.env next to Akashvani.exe';
 
 /**
  * Built Vite frontend (HTML/JS/CSS). Express serves this with `express.static`
@@ -182,6 +196,8 @@ export function describePaths() {
     ffmpeg: FFMPEG_BIN,
     ffprobe: FFPROBE_BIN,
     watermark: WATERMARK_PATH,
-    logFile: join(USER_DATA_DIR, 'logs', 'akashvani.log'),
+    logFile: IS_PACKAGED
+      ? join(logDir(process.platform, process.env, os.homedir()), 'akashvani.log')
+      : join(USER_DATA_DIR, 'logs', 'akashvani.log'),
   };
 }

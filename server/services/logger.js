@@ -10,7 +10,8 @@
  * machine and may be missing, and support needs one path that is the same
  * everywhere. Packaged builds always log to
  *
- *   %LOCALAPPDATA%\Akashvani Workflow\logs\
+ *   %LOCALAPPDATA%\Akashvani Workflow\logs\        (Windows)
+ *   ~/Library/Logs/Akashvani Workflow/             (macOS)
  *
  * which is guaranteed to exist and be writable for the signed-in user.
  */
@@ -19,12 +20,10 @@ import { appendFileSync, mkdirSync, existsSync, statSync, renameSync, readFileSy
 import { join, dirname } from 'path';
 import os from 'os';
 import { IS_PACKAGED, APP_ROOT } from '../paths.js';
+import { logDir } from '../appDirs.js';
 
 function resolveLogDir() {
-  if (IS_PACKAGED) {
-    const base = process.env.LOCALAPPDATA || join(os.homedir(), 'AppData', 'Local');
-    return join(base, 'Akashvani Workflow', 'logs');
-  }
+  if (IS_PACKAGED) return logDir(process.platform, process.env, os.homedir());
   return join(APP_ROOT, 'logs');
 }
 

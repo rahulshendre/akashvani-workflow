@@ -31,7 +31,7 @@
 import { spawn } from 'child_process';
 import { mkdir, writeFile, readFile, rm } from 'fs/promises';
 import { join } from 'path';
-import { FFMPEG_BIN, FFPROBE_BIN } from '../paths.js';
+import { FFMPEG_BIN, FFPROBE_BIN, CONFIG_FILE_HINT } from '../paths.js';
 import { logInfo, logWarn } from './logger.js';
 
 const API_URL = 'https://api.sarvam.ai/speech-to-text';
@@ -99,7 +99,7 @@ function apiKey() {
   if (!key) {
     const err = new Error(
       'No Sarvam API key on this machine, so subtitles cannot be generated automatically. ' +
-      'Add SARVAM_API_KEY to config.env next to Akashvani.exe, or upload an .srt yourself.'
+      `Add SARVAM_API_KEY to ${CONFIG_FILE_HINT}, or upload an .srt yourself.`
     );
     err.notConfigured = true;
     throw err;

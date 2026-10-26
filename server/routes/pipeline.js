@@ -19,7 +19,7 @@ import {
 } from '../services/romanize/dictionarySource.js';
 import { ensureDriveEpisodeFolders, uploadFilesToEpisodeSubtitles, uploadFilesToEpisodeLEFolder, isAuthenticated, isConfigured, getAuthUrl, assertFolderAccessible } from '../services/gdrive.js';
 import { uploadedFiles, uploadSessions } from './upload.js';
-import { UPLOADS_DIR, WORKFLOWS_DIR } from '../paths.js';
+import { UPLOADS_DIR, WORKFLOWS_DIR, CONFIG_FILE_HINT } from '../paths.js';
 import { logUploadFailure, logError, logWarn, logInfo, LOG_FILE, INSTALL_LOG_FILE, LOG_DIR, readLogTail } from '../services/logger.js';
 import { encodeReturnTo } from './auth.js';
 import {
@@ -469,7 +469,7 @@ async function runTranscriptionPhase(sessionId, videoPaths) {
 
   if (!isTranscriptionConfigured()) {
     log(sessionId, stepId, 'No Sarvam API key on this machine — automatic subtitles are off.');
-    log(sessionId, stepId, 'Add SARVAM_API_KEY to config.env next to Akashvani.exe, or upload an .srt below.');
+    log(sessionId, stepId, `Add SARVAM_API_KEY to ${CONFIG_FILE_HINT}, or upload an .srt below.`);
     logWarn('transcription skipped: no API key', { sessionId });
     return false;
   }
@@ -836,7 +836,7 @@ router.post('/transcribe', async (req, res) => {
     return res.status(503).json({
       error:
         'This machine has no Sarvam API key, so subtitles cannot be generated here. ' +
-        'Add SARVAM_API_KEY to config.env next to Akashvani.exe and restart the app, or upload an .srt yourself.',
+        `Add SARVAM_API_KEY to ${CONFIG_FILE_HINT} and restart the app, or upload an .srt yourself.`,
       notConfigured: true,
     });
   }
@@ -1019,7 +1019,7 @@ router.post('/romanize', async (req, res) => {
     return res.status(503).json({
       error:
         'This machine has no Anthropic API key, so subtitles cannot be converted to Roman ' +
-        'script. Add ANTHROPIC_API_KEY to config.env next to Akashvani.exe and restart the app.',
+        `script. Add ANTHROPIC_API_KEY to ${CONFIG_FILE_HINT} and restart the app.`,
       notConfigured: true,
     });
   }
