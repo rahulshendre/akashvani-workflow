@@ -1,11 +1,11 @@
 # Akashvani Workflow
 
-A Windows desktop app that runs PlanetRead's video subtitling pipeline: it copies and
+A desktop app for Windows and for Macs with Apple silicon that runs PlanetRead's video subtitling pipeline: it copies and
 compresses episode footage, uploads it to Google Drive, generates subtitles from the
 audio, hands them to Language Experts on other machines for review, and converts the
 finished subtitles to Roman script.
 
-It ships as a single `.exe` — a Node backend with a React frontend bundled inside,
+It ships as a single `.exe` (a `.dmg` on the Mac) — a Node backend with a React frontend bundled inside,
 plus FFmpeg. Editors install it and never see a terminal.
 
 ---
@@ -34,8 +34,9 @@ Drive, never through it.
 
 | | |
 |---|---|
-| **Node 20** | `pkg` targets `node20-win-x64`; other majors produce a broken exe |
+| **Node 20** | `pkg` targets `node20-win-x64` and `node20-macos-arm64`; other majors produce a broken binary |
 | **Windows x64** | Required to *build* the installer. Dev also runs on other platforms, but the bundled FFmpeg and Inno Setup are Windows-only |
+| **Apple silicon Mac** | Required to *build* the Mac app. It uses `osacompile`, `codesign` and `hdiutil`, which ship with macOS. Built for macOS 13 or newer, tested on 15 |
 | **Inno Setup 6** | Only to build the installer — <https://jrsoftware.org/isinfo.php> (free) |
 | **A Google Cloud project** | For Drive access (below) |
 
@@ -148,6 +149,49 @@ Control will block it.
 
 ---
 
+## Building the Mac app
+
+On an Apple silicon Mac with Node 20:
+
+```bash
+npm install
+npm run build:mac
+```
+
+That runs the frontend build, downloads a static arm64 FFmpeg, bundles the watermark,
+builds the server with `pkg` for `node20-macos-arm64`, and assembles the app. The
+result is `dist-mac/Akashvani Workflow.app` and `dist-mac/AkashvaniWorkflow.dmg`.
+
+The app is a small AppleScript launcher (`installer/mac/launcher.applescript`) around the
+same server the Windows exe runs. It gives the editor a Dock icon, Quit (Cmd+Q), and
+reopens the page when the app is clicked again. Inside the bundle, the server sits in
+`Contents/Resources/server/` with the same layout as the Windows install folder, so
+`server/paths.js` finds the frontend, FFmpeg and watermark next to the binary on both
+platforms.
+
+**FFmpeg.** `scripts/fetch-ffmpeg-mac.mjs` downloads the static build from osxexperts.net.
+The URLs are not versioned, so the zips are pinned by SHA-256. If the build changes, the
+script stops and tells you; check the new build and update the hashes in the script.
+Homebrew's FFmpeg is not an alternative: it loads dylibs other Macs do not have.
+
+**Keys.** They are read from `server/.env` only, and written to `config.defaults.env`
+inside the app. The environment is ignored unless you pass `--from-env`
+(`node scripts/build-mac-app.mjs --from-env`), because variables such as
+`ANTHROPIC_API_KEY` are often exported for other tools and a key picked up that way
+would end up in an app you hand to someone else. The build prints which keys it found,
+masked. On every launch the app copies any baked-in key into a blank slot of the user's
+`config.env`, and never overwrites a value somebody typed.
+
+**Signing.** The app is signed ad hoc, not with an Apple Developer ID, so it is not
+notarised. macOS blocks it the first time; the editor opens System Settings, Privacy &
+Security, and chooses Open Anyway (the steps are in `installer/mac/First-run-setup-mac.txt`,
+which is also in the disk image). With a Developer ID, replace the `codesign --sign -`
+call in `scripts/build-mac-app.mjs` and add notarisation.
+
+The server binary is arm64 only. On an Intel Mac the app says so and does not start.
+
+---
+
 ## The session sync service (optional)
 
 Only needed for cross-machine collaboration. Without it the app still works for a
@@ -176,11 +220,11 @@ when a render loop created ~10 sessions per second.
 
 ## Where things live at runtime
 
-| | Packaged | Dev |
-|---|---|---|
-| Episode data | the drive the editor picks on first run, else `Documents\Akashvani Workflow` | `server/` |
-| Logs | `%LOCALAPPDATA%\Akashvani Workflow\logs\` | `logs/` |
-| Config | `config.env` next to the exe | `server/.env` |
+| | Packaged (Windows) | Packaged (macOS) | Dev |
+|---|---|---|---|
+| Episode data | the drive the editor picks on first run, else `Documents\Akashvani Workflow` | the home folder or a disk the editor picks on first run, else `~/Documents/Akashvani Workflow` | `server/` |
+| Logs | `%LOCALAPPDATA%\Akashvani Workflow\logs\` | `~/Library/Logs/Akashvani Workflow/` | `logs/` |
+| Config | `config.env` next to the exe | `~/Library/Application Support/Akashvani Workflow/config.env` | `server/.env` |
 
 Logs are deliberately **not** on the user-chosen data drive: that varies per machine and
 may be missing, and supporting several offices remotely needs one path that is the same
