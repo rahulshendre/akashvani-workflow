@@ -523,7 +523,10 @@ export function checkBackendHealth(): Promise<boolean> {
 }
 
 export interface DriveInfo {
-  letter: string;
+  /** Windows only: the drive letter. macOS entries have none. */
+  letter?: string;
+  /** What to call it in the list: "D:\" on Windows, a volume name on macOS. */
+  name: string;
   root: string;
   total: number;
   free: number;

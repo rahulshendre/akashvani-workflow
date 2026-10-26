@@ -109,11 +109,11 @@ export default function DriveSetup() {
         ) : (
           <div className="space-y-3">
             {drives.map(drive => {
-              const isSelected = selected?.letter === drive.letter;
+              const isSelected = selected?.root === drive.root;
               const freePct = drive.total > 0 ? (drive.free / drive.total) * 100 : 0;
               return (
                 <button
-                  key={drive.letter}
+                  key={drive.root}
                   type="button"
                   onClick={() => setSelected(drive)}
                   className={`w-full text-left rounded-lg border p-4 transition-colors ${
@@ -125,10 +125,10 @@ export default function DriveSetup() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className={`h-9 w-9 rounded-md flex items-center justify-center text-sm font-bold ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}>
-                        {drive.letter}:
+                        {drive.letter ? `${drive.letter}:` : <HardDrive className="h-4 w-4" />}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{drive.root}</p>
+                        <p className="text-sm font-medium">{drive.name}</p>
                         <p className="text-xs text-muted-foreground font-mono">{drive.suggestedPath}</p>
                       </div>
                     </div>

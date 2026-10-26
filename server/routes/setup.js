@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { join } from 'path';
-import { mkdirSync, existsSync, statfsSync } from 'fs';
+import { mkdirSync } from 'fs';
+import os from 'os';
 import { spawn } from 'child_process';
 import { IS_PACKAGED, USER_DATA_DIR, isFirstRun, saveUserDataDir } from '../paths.js';
+import { listDrives } from '../volumes.js';
 
 const router = Router();
 
@@ -16,32 +18,11 @@ router.get('/status', (_req, res) => {
 
 /**
  * GET /api/setup/drives
- * Lists fixed Windows drives with total and free space using Node.js
- * built-in fs.statfsSync — no external commands, no PATH dependency.
+ * Lists the places the data folder can go, with total and free space: fixed
+ * drives on Windows, the home folder and mounted disks on macOS. See volumes.js.
  */
 router.get('/drives', (_req, res) => {
-  const drives = [];
-  for (const letter of 'CDEFGHIJKLMNOPQRSTUVWXYZ') {
-    const root = `${letter}:\\`;
-    if (!existsSync(root)) continue;
-    try {
-      const stats = statfsSync(root);
-      const total = stats.blocks * stats.bsize;
-      const free = stats.bfree * stats.bsize;
-      if (total === 0) continue; // skip optical drives with no disc
-      drives.push({
-        letter,
-        root,
-        total,
-        free,
-        used: total - free,
-        suggestedPath: `${letter}:\\Akashvani Workflow`,
-      });
-    } catch {
-      // not accessible (locked, optical, network — skip silently)
-    }
-  }
-  res.json({ drives });
+  res.json({ drives: listDrives({ home: os.homedir() }) });
 });
 
 /**
