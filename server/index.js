@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import { mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { spawn } from 'child_process';
 import { config as loadEnv } from 'dotenv';
 
 import uploadRouter from './routes/upload.js';
@@ -23,6 +22,7 @@ import {
   describePaths,
 } from './paths.js';
 import { seedConfig } from './configSeed.js';
+import { openInDefaultBrowser } from './openBrowser.js';
 import {
   logStartup, logInfo, logWarn, logError, installCrashHandlers, LOG_DIR,
 } from './services/logger.js';
@@ -129,17 +129,3 @@ server.on('error', (err) => {
   }
   process.exit(1);
 });
-
-/**
- * Opens the given URL in the user's default browser. Windows-only for v1
- * (the installer target). Uses cmd's `start` with an empty title arg.
- */
-function openInDefaultBrowser(url) {
-  if (process.platform !== 'win32') return;
-  try {
-    spawn('cmd', ['/c', 'start', '""', url], { detached: true, stdio: 'ignore' }).unref();
-  } catch (err) {
-    console.error('Could not open default browser:', err.message);
-    console.error(`Open this URL manually: ${url}`);
-  }
-}
