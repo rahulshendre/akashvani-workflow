@@ -2,9 +2,9 @@ import { Router } from 'express';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import os from 'os';
-import { spawn } from 'child_process';
 import { IS_PACKAGED, USER_DATA_DIR, isFirstRun, saveUserDataDir } from '../paths.js';
 import { listDrives } from '../volumes.js';
+import { restartApp } from '../restart.js';
 
 const router = Router();
 
@@ -55,14 +55,9 @@ router.post('/configure', (req, res) => {
 
   res.json({ ok: true, dataDir });
 
-  // Spawn a new instance and exit current one. The 1.5s delay gives the
+  // Start a new instance and exit the current one. The 1.5s delay gives the
   // browser time to render the success screen before the connection drops.
-  setTimeout(() => {
-    try {
-      spawn(process.execPath, [], { detached: true, stdio: 'ignore' }).unref();
-    } catch {}
-    setTimeout(() => process.exit(0), 600);
-  }, 1500);
+  setTimeout(restartApp, 1500);
 });
 
 export default router;

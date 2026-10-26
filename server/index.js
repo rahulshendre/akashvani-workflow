@@ -22,6 +22,7 @@ import {
   describePaths,
 } from './paths.js';
 import { seedConfig } from './configSeed.js';
+import { registerServer } from './restart.js';
 import { openInDefaultBrowser } from './openBrowser.js';
 import {
   logStartup, logInfo, logWarn, logError, installCrashHandlers, LOG_DIR,
@@ -117,6 +118,8 @@ const server = app.listen(PORT, () => {
 
   if (IS_PACKAGED) openInDefaultBrowser(url);
 });
+
+registerServer(server);
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
