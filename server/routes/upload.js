@@ -3,6 +3,7 @@ import multer from 'multer';
 import { randomBytes } from 'crypto';
 import { basename, extname } from 'path';
 import { UPLOADS_DIR } from '../paths.js';
+import { withUtf8Names } from '../uploadNames.js';
 import { findSessionByFolderName, updateSessionState } from '../services/sessionState.js';
 
 const storage = multer.diskStorage({
@@ -16,13 +17,13 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 20 * 1024 * 1024 * 1024 }, // 20 GB
-  fileFilter: (_req, file, cb) => {
+  fileFilter: withUtf8Names((_req, file, cb) => {
     if (file.mimetype.startsWith('video/') || /\.(mp4|mov|avi|mkv|mxf)$/i.test(file.originalname)) {
       cb(null, true);
     } else {
       cb(new Error('Only video files are accepted (.mp4, .mov, .avi, .mkv, .mxf)'));
     }
-  },
+  }),
 });
 
 // Shared store: fileId -> { path, name, size, sessionId, relativePath }

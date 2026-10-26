@@ -19,6 +19,7 @@ import {
 } from '../services/romanize/dictionarySource.js';
 import { ensureDriveEpisodeFolders, uploadFilesToEpisodeSubtitles, uploadFilesToEpisodeLEFolder, isAuthenticated, isConfigured, getAuthUrl, assertFolderAccessible } from '../services/gdrive.js';
 import { uploadedFiles, uploadSessions } from './upload.js';
+import { withUtf8Names } from '../uploadNames.js';
 import { UPLOADS_DIR, WORKFLOWS_DIR, CONFIG_FILE_HINT } from '../paths.js';
 import { logUploadFailure, logError, logWarn, logInfo, LOG_FILE, INSTALL_LOG_FILE, LOG_DIR, readLogTail } from '../services/logger.js';
 import { encodeReturnTo } from './auth.js';
@@ -69,10 +70,10 @@ const srtUpload = multer({
     filename: (_req, file, cb) => cb(null, `srt-${Date.now()}-${file.originalname}`),
   }),
   limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: withUtf8Names((_req, file, cb) => {
     if (/\.srt$/i.test(file.originalname)) return cb(null, true);
     cb(new Error('Only .srt files are accepted'));
-  },
+  }),
 });
 
 const wordUpload = multer({
@@ -81,10 +82,10 @@ const wordUpload = multer({
     filename: (_req, file, cb) => cb(null, `word-${Date.now()}-${file.originalname}`),
   }),
   limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB
-  fileFilter: (_req, file, cb) => {
+  fileFilter: withUtf8Names((_req, file, cb) => {
     if (/\.(doc|docx)$/i.test(file.originalname)) return cb(null, true);
     cb(new Error('Only .doc or .docx files are accepted'));
-  },
+  }),
 });
 
 const le3SrtUpload = multer({
@@ -93,10 +94,10 @@ const le3SrtUpload = multer({
     filename: (_req, file, cb) => cb(null, `le3-srt-${Date.now()}-${file.originalname}`),
   }),
   limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: withUtf8Names((_req, file, cb) => {
     if (/\.srt$/i.test(file.originalname)) return cb(null, true);
     cb(new Error('Only .srt files are accepted'));
-  },
+  }),
 });
 
 const prprojUpload = multer({
@@ -105,10 +106,10 @@ const prprojUpload = multer({
     filename: (_req, file, cb) => cb(null, `prproj-${Date.now()}-${file.originalname}`),
   }),
   limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10 GB
-  fileFilter: (_req, file, cb) => {
+  fileFilter: withUtf8Names((_req, file, cb) => {
     if (/\.prproj$/i.test(file.originalname)) return cb(null, true);
     cb(new Error('Only .prproj files are accepted'));
-  },
+  }),
 });
 
 function send(sessionId, event, data = {}) {
