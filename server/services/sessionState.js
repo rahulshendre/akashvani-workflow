@@ -190,15 +190,23 @@ export async function recordLeUpload(sessionId, leRole, fileName) {
 }
 
 /**
+ * What two folder names are compared by. NFC, because macOS often returns the
+ * decomposed form of an accented letter ("e" plus a combining accent) where
+ * Windows gives the single composed character: the same name must not look
+ * like two different episodes.
+ */
+const folderKey = (name) => String(name ?? '').normalize('NFC').trim().toLowerCase();
+
+/**
  * Find a live (non-deleted) session already using this episode folder name.
  * Used to refuse a second upload of the same folder — for the editor that folder
  * already exists, so a duplicate would silently fork the episode in two.
  */
 export async function findSessionByFolderName(folderName) {
   if (!folderName) return null;
-  const wanted = String(folderName).trim().toLowerCase();
+  const wanted = folderKey(folderName);
   const sessions = await listLocalSessions();
-  return sessions.find((s) => String(s.folderName ?? '').trim().toLowerCase() === wanted) ?? null;
+  return sessions.find((s) => folderKey(s.folderName) === wanted) ?? null;
 }
 
 /**
