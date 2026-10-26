@@ -443,6 +443,7 @@ function simulateCompress(input, output, onProgress) {
 
 export async function compressVideos(inputPaths, outputDir, onProgress, onLog) {
   const results      = [];
+  const failed       = [];
   const hasFfmpeg    = await checkBin(FFMPEG_BIN);
   const hasFfprobe   = await checkBin(FFPROBE_BIN);
   // Watermark resolution order:
@@ -520,7 +521,19 @@ export async function compressVideos(inputPaths, outputDir, onProgress, onLog) {
       const s = await stat(output);
       onLog(`  ✓ Output: ${(s.size / 1024 / 1024).toFixed(1)} MB`);
       results.push(output);
-    } catch { /* output missing — error already logged */ }
+    } catch {
+      // Both encode attempts failed and the reason is in the log above. Carrying on
+      // would report "compression complete" with this file missing, and the episode
+      // would go on to Drive and the reviewers without it.
+      failed.push(basename(input));
+    }
+  }
+
+  if (failed.length) {
+    throw new Error(
+      `Could not compress ${failed.join(', ')}. The reason is in this step's log. ` +
+      (results.length ? `${results.length} other file(s) were compressed.` : '')
+    );
   }
 
   return results;
