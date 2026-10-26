@@ -196,7 +196,12 @@ function buildFilterArgs(watermarkAssetPath, meta) {
   // ─── Text-only fallback (no PNG provided) ──────────────────────────────
   // Recreates a Premiere-style diagonal "WAVES OTT FOR SLC" overlay.
   const watermarkText = escapeDrawtext(process.env.WATERMARK_TEXT || 'WAVES OTT FOR SLC');
-  const textOpacity   = process.env.WATERMARK_OPACITY || '0.45';
+  // WATERMARK_OPACITY is also the alpha multiplier for the image watermark, where
+  // values above 1 are normal (config.env.template ships 1.5). drawtext only
+  // accepts 0 to 1 and fails the whole encode on anything else, so a value that
+  // does not fit uses the default.
+  const rawOpacity    = parseFloat(process.env.WATERMARK_OPACITY ?? '');
+  const textOpacity   = rawOpacity >= 0 && rawOpacity <= 1 ? rawOpacity : 0.45;
   const rotateRad     = process.env.WATERMARK_ANGLE_RAD || '-PI/8';
   const fontPx        = Math.round(canvasH / 9);
 
