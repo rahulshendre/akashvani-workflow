@@ -317,10 +317,13 @@ async function runAdaptiveEncode(input, output, onProgress, wmPath, meta, onLog)
     `min-keyint=${Math.round(s.gopSize / 2)}`,
   ].join(':');
 
+  // No -profile:v here. Pass 1 runs x264's fast first pass, which cannot honour the
+  // High profile: with it, libx264 refuses to open ("Invalid argument") and the
+  // whole 2-pass encode quietly fell back to CRF. Pass 1's output is thrown away,
+  // so only pass 2 needs the profile.
   const sharedVideoArgs = [
     '-c:v', 'libx264',
     '-preset', X264_PRESET,
-    '-profile:v', 'high',
     '-level:v', '4.0',
     '-b:v', `${s.videoKbps}k`,
     '-maxrate', `${s.maxKbps}k`,
@@ -348,6 +351,7 @@ async function runAdaptiveEncode(input, output, onProgress, wmPath, meta, onLog)
     ...filter.args,
     '-map', '0:a?',
     ...sharedVideoArgs,
+    '-profile:v', 'high',
     '-pass', '2',
     '-pix_fmt', 'yuv420p',
     '-c:a', 'aac',
