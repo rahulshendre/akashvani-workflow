@@ -67,6 +67,23 @@ describe.skipIf(!haveFfmpeg)('compress step with real FFmpeg', () => {
     expect(existsSync(join(target, 'clip_compressed.mp4'))).toBe(true);
   });
 
+  it('removes the half-written file when the encode is stopped, so a resume cannot mistake it for a finished video', { timeout: 120000 }, async () => {
+    const { compressVideos, killActiveEncodes } = await load({ X264_PRESET: 'veryslow' });
+    const long = join(dir, 'long.mp4');
+    execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=duration=30:size=1920x1080:rate=24', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', long]);
+    const target = fresh();
+    const logs: string[] = [];
+    const run = compressVideos([long], target, () => {}, (m: string) => logs.push(m));
+    const settled = run.catch((e: unknown) => e);
+
+    await vi.waitFor(() => { if (!logs.some((m) => /Encoding at/.test(m))) throw new Error('not started'); }, { timeout: 30000, interval: 100 });
+    await new Promise((r) => setTimeout(r, 1500));
+    expect(killActiveEncodes()).toBeGreaterThan(0);
+
+    expect(await settled).toMatchObject({ stopped: true });
+    expect(readdirSync(target)).toEqual([]);
+  });
+
   it('two-pass encoding runs both passes without falling back, and cleans up its pass logs', { timeout: 60000 }, async () => {
     const { compressVideos } = await load({ ENCODE_MODE: '2pass' });
     const logs: string[] = [];

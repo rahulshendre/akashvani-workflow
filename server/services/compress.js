@@ -13,6 +13,13 @@ const X264_PRESET = process.env.X264_PRESET || 'veryfast';
 
 // ─────────────────────────────── helpers ───────────────────────────────────
 
+/** Remove a half-written output and any two-pass logs it left beside it. */
+async function discard(output) {
+  for (const suffix of ['', '.passlog', '.passlog-0.log', '.passlog-0.log.mbtree']) {
+    try { await unlink(output + suffix); } catch { /* not there */ }
+  }
+}
+
 function normalizeWatermarkPath(raw) {
   if (!raw) return '';
   let p = String(raw).trim();
@@ -484,46 +491,56 @@ export async function compressVideos(inputPaths, outputDir, onProgress, onLog) {
 
     onLog(`\n[${i + 1}/${inputPaths.length}] ${basename(input)}`);
 
-    if (!hasFfmpeg) {
-      onLog('  ffmpeg not found — simulating (install ffmpeg and add to PATH)');
-      await simulateCompress(input, output, perFile);
-    } else if (hasFfprobe) {
-      let meta;
-      try {
-        meta = await getVideoMeta(input);
-        if (meta.duration <= 0) throw new Error('Could not read video duration');
-
-        const s     = calcAdaptiveSettings(meta.duration, meta.width, meta.height, meta.fps);
-        const estMB = Math.round((s.videoKbps + 192) * meta.duration / 8 / 1024 / 1024);
-
-        onLog(`  Source : ${meta.width}×${meta.height} @ ${meta.fps.toFixed(2)} fps, ${meta.duration.toFixed(0)} s`);
-        onLog(`  Premiere "Adaptive Low": ${s.videoKbps} kbps video / ${s.maxKbps} kbps max → ~${estMB} MB`);
-
-        const mode = TWO_PASS_MODE
-          ? await runAdaptiveEncode(input, output, perFile, wmPath, meta, onLog)
-          : await runSinglePassVBR(input, output, perFile, wmPath, meta, onLog);
-        onLog(`  Watermark: ${mode}`);
-      } catch (err) {
-        // A deliberate stop must not be treated as an encode failure, or the
-        // CRF fallback would immediately restart the work we just killed.
-        if (err.stopped) throw err;
-        onLog(`  Encode failed: ${err.message}`);
-        onLog('  Retrying with CRF fallback...');
+    try {
+      if (!hasFfmpeg) {
+        onLog('  ffmpeg not found — simulating (install ffmpeg and add to PATH)');
+        await simulateCompress(input, output, perFile);
+      } else if (hasFfprobe) {
+        let meta;
         try {
-          await runCRFFallback(input, output, perFile, wmPath, meta);
-          onLog('  CRF fallback applied');
-        } catch (err2) {
-          if (err2.stopped) throw err2;
-          onLog(`  CRF fallback also failed: ${err2.message}`);
+          meta = await getVideoMeta(input);
+          if (meta.duration <= 0) throw new Error('Could not read video duration');
+
+          const s     = calcAdaptiveSettings(meta.duration, meta.width, meta.height, meta.fps);
+          const estMB = Math.round((s.videoKbps + 192) * meta.duration / 8 / 1024 / 1024);
+
+          onLog(`  Source : ${meta.width}×${meta.height} @ ${meta.fps.toFixed(2)} fps, ${meta.duration.toFixed(0)} s`);
+          onLog(`  Premiere "Adaptive Low": ${s.videoKbps} kbps video / ${s.maxKbps} kbps max → ~${estMB} MB`);
+
+          const mode = TWO_PASS_MODE
+            ? await runAdaptiveEncode(input, output, perFile, wmPath, meta, onLog)
+            : await runSinglePassVBR(input, output, perFile, wmPath, meta, onLog);
+          onLog(`  Watermark: ${mode}`);
+        } catch (err) {
+          // A deliberate stop must not be treated as an encode failure, or the
+          // CRF fallback would immediately restart the work we just killed.
+          if (err.stopped) throw err;
+          onLog(`  Encode failed: ${err.message}`);
+          onLog('  Retrying with CRF fallback...');
+          try {
+            await runCRFFallback(input, output, perFile, wmPath, meta);
+            onLog('  CRF fallback applied');
+          } catch (err2) {
+            if (err2.stopped) throw err2;
+            onLog(`  CRF fallback also failed: ${err2.message}`);
+            await discard(output);
+          }
+        }
+      } else {
+        try {
+          await runCRFFallback(input, output, perFile, wmPath);
+        } catch (err) {
+          if (err.stopped) throw err;
+          onLog(`  Encode failed: ${err.message}`);
+          await discard(output);
         }
       }
-    } else {
-      try {
-        await runCRFFallback(input, output, perFile, wmPath);
-      } catch (err) {
-        if (err.stopped) throw err;
-        onLog(`  Encode failed: ${err.message}`);
-      }
+    } catch (err) {
+      // A stopped encode leaves a half-written file. It must not stay: a resumed episode reads any
+      // *_compressed file as "compress is done" (see inferStepStatesFromDisk), so the truncated
+      // video would go on to Drive and the reviewers.
+      await discard(output);
+      throw err;
     }
 
     try {
