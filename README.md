@@ -118,6 +118,40 @@ npm run lint
 > solution file (`"files": []` plus project references), so the bare command type-checks
 > **zero files** and exits 0 — a green tick that means nothing.
 
+### Smoke tests for the built Mac app
+
+`npm test` checks the code. These check the **built app**, the way an editor would run it, on a
+throwaway home folder so nothing touches your own data:
+
+```bash
+npm run build:mac:app -- --no-keys   # or the full npm run build:mac first
+npm run test:smoke                   # about 3 minutes
+```
+
+They cover first launch and the storage choice, copy and compress with the FFmpeg inside the app,
+Stop and resume, the whole Google Drive flow, automatic subtitles, the `.app` and the disk image
+(signature, architecture, linked libraries), and the screens in a real browser. The browser tests
+walk the full workflow: an editor on one Mac and Language Experts on another.
+
+Nothing here needs a Google account. `scripts/smoke/fake-google.mjs` stands in for Google (the app
+is pointed at it through `HTTPS_PROXY`), and the browser tests run this repo's own `fly-service/`
+against a temporary PostgreSQL. The one real service is Sarvam, for the subtitle tests.
+
+What is needed on the Mac running them:
+
+| | for |
+|---|---|
+| the built app in `dist-mac/` | everything |
+| `ffmpeg` and `ffprobe` on PATH | making test videos and inspecting results (the app uses its own) |
+| Google Chrome | the browser tests |
+| PostgreSQL server programs (`brew install postgresql@14`) and `npm ci` in `fly-service/` | the browser tests |
+| `SARVAM_API_KEY` in `server/.env`, and the macOS `say` command | the subtitle tests, which spend a little Sarvam credit |
+
+A suite whose requirement is missing is skipped with the reason. `SMOKE_LAUNCHER=1` also runs the
+test that starts the app the way a double-click does (it opens your browser once),
+`SMOKE_SCREENSHOTS=<folder>` saves screenshots from the browser tests, and `AKASHVANI_BIN` points the
+tests at a different server binary.
+
 ---
 
 ## Building the installer
