@@ -1,0 +1,102 @@
+================================================================
+ Akashvani Workflow for Mac - Getting Started
+================================================================
+
+This version needs a Mac with Apple silicon (M1 or newer).
+
+
+----------------------------------------------------------------
+ INSTALL
+----------------------------------------------------------------
+
+  1. Drag "Akashvani Workflow" onto the Applications folder in
+     this window.
+  2. Open Applications and double-click "Akashvani Workflow".
+
+
+----------------------------------------------------------------
+ THE FIRST TIME YOU OPEN IT
+----------------------------------------------------------------
+
+  This build is not signed by Apple, so macOS stops it once with
+  a message that it cannot check the app for malware. This is
+  expected. To allow it:
+
+    1. Click Done on that message.
+    2. Open  System Settings  ->  Privacy & Security.
+    3. Scroll down to the Security section. Next to
+       "Akashvani Workflow was blocked", click  Open Anyway.
+    4. Enter your Mac password, then click Open.
+
+  You only do this once. If the app is still blocked, run this
+  in Terminal and open it again:
+
+    xattr -dr com.apple.quarantine "/Applications/Akashvani Workflow.app"
+
+
+----------------------------------------------------------------
+ USING IT
+----------------------------------------------------------------
+
+  Your default browser opens to http://localhost:3001 and the
+  pipeline loads. The app keeps running in the Dock.
+
+    - Closed the browser tab? Click "Akashvani Workflow" in the
+      Dock and the page opens again.
+    - Done for the day? Right-click the Dock icon and choose Quit
+      (or press Cmd+Q). This stops the app and anything it is
+      still encoding.
+
+  On the first run it asks where to keep your work. The Home
+  folder is the default. Pick an external disk if the footage is
+  large.
+
+
+----------------------------------------------------------------
+ FIRST GOOGLE DRIVE UPLOAD
+----------------------------------------------------------------
+
+  The first time the pipeline reaches the Google Drive upload
+  step, a banner appears with an "Authorize Google Drive" link.
+
+    1. Click the link. A Google sign-in tab opens.
+    2. Pick the Google account that owns the Drive folder you
+       want to upload to.
+    3. Accept the permission to see and upload files.
+    4. The tab returns to Akashvani and the pipeline resumes.
+
+  You only do this once.
+
+
+----------------------------------------------------------------
+ WHERE YOUR WORK GOES
+----------------------------------------------------------------
+
+  Every pipeline run creates a session folder in the location you
+  chose on the first run (by default, Documents):
+
+       Akashvani Workflow/workflows/<session-id>/
+                        akashwani-structure/
+                          raw footage/     (copies of your originals)
+                          source file/     (compressed + watermarked videos)
+                          AI Subtitles/    (SRT and Word transcript)
+                          Editor/          (Premiere Pro project files)
+
+  Deleting the app does not touch this folder.
+
+
+----------------------------------------------------------------
+ SETTINGS AND LOGS
+----------------------------------------------------------------
+
+  Settings file:
+    ~/Library/Application Support/Akashvani Workflow/config.env
+
+  Logs (send these if something goes wrong):
+    ~/Library/Logs/Akashvani Workflow/akashvani.log
+
+  In Finder, choose Go -> Go to Folder and paste either path.
+  The settings normally never need editing. After editing, Quit
+  the app and open it again.
+
+================================================================
